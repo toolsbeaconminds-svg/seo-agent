@@ -4,6 +4,11 @@ from typing import TypedDict
 class AgentState(TypedDict, total=False):
     url: str
 
+    # User-supplied focus inputs
+    focus_keywords: list[str]
+    focus_pages: list[str]
+    special_instructions: str
+
     # Scout output
     business_name: str
     business_description: str

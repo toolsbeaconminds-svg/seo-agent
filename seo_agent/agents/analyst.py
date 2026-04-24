@@ -15,6 +15,10 @@ class AnalystAgent:
     async def run(self, state: dict) -> dict:
         print("  [analyst] Synthesising all data...")
 
+        focus_keywords = state.get("focus_keywords", [])
+        focus_pages = state.get("focus_pages", [])
+        special_instructions = state.get("special_instructions", "")
+
         payload = {
             "business_name": state.get("business_name", "Unknown"),
             "business_description": state.get("business_description", ""),
@@ -34,7 +38,38 @@ class AnalystAgent:
             "data_errors": state.get("errors", []),
         }
 
+        # Build directive block — only included when the user supplied focus inputs
+        directive_lines = []
+        if focus_keywords:
+            directive_lines.append(
+                f"FOCUS KEYWORDS: {', '.join(focus_keywords)}\n"
+                "  → Check current rankings for these terms specifically. Elevate any findings "
+                "related to them. Ensure keyword_analysis.opportunities includes each one with "
+                "current position and recommended action."
+            )
+        if focus_pages:
+            pages_list = "\n  ".join(focus_pages)
+            directive_lines.append(
+                f"FOCUS PAGES:\n  {pages_list}\n"
+                "  → Audit these URLs with extra scrutiny. Promote any issues affecting them to "
+                "higher priority. Include a dedicated finding for each focus page if issues exist."
+            )
+        if special_instructions:
+            directive_lines.append(
+                f"SPECIAL INSTRUCTIONS: {special_instructions}\n"
+                "  → Respect this context. Let it override general heuristics where applicable."
+            )
+
+        directive_block = ""
+        if directive_lines:
+            directive_block = (
+                "=== USER DIRECTIVES — follow these strictly ===\n"
+                + "\n\n".join(directive_lines)
+                + "\n================================================\n\n"
+            )
+
         user_msg = (
+            f"{directive_block}"
             "Analyse this data and return the structured JSON analysis.\n\n"
             f"```json\n{json.dumps(payload, indent=2, default=str)}\n```"
         )

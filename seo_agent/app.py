@@ -26,7 +26,14 @@ STATE_FILE = "output/.last_analysis_state.json"
 CHAT_SESSION_FILE = "output/.chat_session.json"
 
 
-def _run_job(job_id: str, url: str, ga4_id: str | None):
+def _run_job(
+    job_id: str,
+    url: str,
+    ga4_id: str | None,
+    focus_keywords: list[str],
+    focus_pages: list[str],
+    special_instructions: str,
+):
     """Run the analysis in a background thread."""
     logs = jobs[job_id]["logs"]
 
@@ -35,7 +42,14 @@ def _run_job(job_id: str, url: str, ga4_id: str | None):
 
     try:
         jobs[job_id]["status"] = "running"
-        filepath = asyncio.run(run_analysis(url, ga4_property_id=ga4_id, log_callback=log_callback))
+        filepath = asyncio.run(run_analysis(
+            url,
+            ga4_property_id=ga4_id,
+            log_callback=log_callback,
+            focus_keywords=focus_keywords,
+            focus_pages=focus_pages,
+            special_instructions=special_instructions,
+        ))
         jobs[job_id]["status"] = "done"
         jobs[job_id]["report_path"] = filepath
 
@@ -160,6 +174,15 @@ def start_analysis():
     url = (data.get("url") or "").strip()
     ga4_id = (data.get("ga4_property_id") or "").strip() or None
 
+    # Optional focus inputs
+    raw_keywords = (data.get("focus_keywords") or "").strip()
+    focus_keywords = [k.strip() for k in raw_keywords.split(",") if k.strip()]
+
+    raw_pages = (data.get("focus_pages") or "").strip()
+    focus_pages = [p.strip() for p in raw_pages.splitlines() if p.strip()]
+
+    special_instructions = (data.get("special_instructions") or "").strip()
+
     if not url:
         return jsonify({"error": "URL is required"}), 400
     if not url.startswith("http"):
@@ -177,7 +200,11 @@ def start_analysis():
         "started_at": time.time(),
     }
 
-    thread = threading.Thread(target=_run_job, args=(job_id, url, ga4_id), daemon=True)
+    thread = threading.Thread(
+        target=_run_job,
+        args=(job_id, url, ga4_id, focus_keywords, focus_pages, special_instructions),
+        daemon=True,
+    )
     thread.start()
 
     return jsonify({"job_id": job_id})

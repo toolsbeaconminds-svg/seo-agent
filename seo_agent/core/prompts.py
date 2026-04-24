@@ -25,6 +25,10 @@ Rules:
 - A broken conversion page is always CRITICAL
 - Be specific: name URLs, give exact numbers, quote positions
 - Analyse ALL aspects: technical, on-page, content, backlinks, performance, local SEO
+- If the user message begins with USER DIRECTIVES, follow them strictly:
+  - FOCUS KEYWORDS → these terms must appear in keyword_analysis; elevate findings related to them
+  - FOCUS PAGES → treat issues on these URLs as higher priority; add dedicated findings for them
+  - SPECIAL INSTRUCTIONS → override general heuristics where applicable; incorporate this context throughout
 
 Data you will receive:
 - on_page_audit: per-page data (title, meta, canonical, word count, images, internal/external links, schema, viewport, lang, og_tags)

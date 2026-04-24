@@ -28,10 +28,19 @@
 
   .field { margin-bottom: 20px; }
   .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
-  .field input { width: 100%; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 15px; outline: none; transition: border-color 0.2s; }
-  .field input:focus { border-color: var(--accent); }
-  .field input::placeholder { color: #334155; }
+  .field input, .field textarea { width: 100%; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 15px; outline: none; transition: border-color 0.2s; font-family: inherit; }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); }
+  .field input::placeholder, .field textarea::placeholder { color: #334155; }
+  .field textarea { resize: vertical; min-height: 80px; line-height: 1.6; font-size: 14px; }
   .field .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .optional-toggle { display: flex; align-items: center; gap: 10px; padding: 14px 0 10px; cursor: pointer; color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); margin-top: 8px; user-select: none; transition: color 0.2s; }
+  .optional-toggle:hover { color: var(--text); }
+  .optional-badge { font-size: 11px; padding: 2px 8px; background: rgba(99,102,241,0.12); color: var(--accent); border-radius: 10px; font-weight: 500; }
+  .optional-toggle .arrow { margin-left: auto; transition: transform 0.25s; font-size: 11px; }
+  .optional-toggle.open .arrow { transform: rotate(180deg); }
+  .optional-fields { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+  .optional-fields.open { max-height: 700px; }
 
   .row { display: flex; gap: 16px; }
   .row .field { flex: 1; }
@@ -200,7 +209,32 @@
             <div class="hint">Uses the same URL. Service account must have access.</div>
           </div>
         </div>
-        <button type="submit" class="btn" id="submitBtn">
+        <div class="optional-toggle" id="optionalToggle" onclick="toggleOptional()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+          Focus &amp; Instructions
+          <span class="optional-badge">Optional</span>
+          <span class="arrow">▼</span>
+        </div>
+
+        <div class="optional-fields" id="optionalFields">
+          <div class="field" style="margin-top:16px;">
+            <label>Keywords to Focus On</label>
+            <input type="text" id="focusKeywords" placeholder="e.g. dental implants, teeth whitening, emergency dentist near me">
+            <div class="hint">Comma-separated. The agent will specifically analyse rankings, gaps, and on-page optimisation for these terms.</div>
+          </div>
+          <div class="field">
+            <label>Pages to Focus On</label>
+            <textarea id="focusPages" placeholder="https://example.com/services&#10;https://example.com/about&#10;/contact"></textarea>
+            <div class="hint">One URL per line. Issues on these pages will be elevated in priority and given dedicated findings.</div>
+          </div>
+          <div class="field">
+            <label>Special Instructions</label>
+            <textarea id="specialInstructions" placeholder="e.g. We are launching a new services page next month. Ignore the blog for now. Focus on local SEO for Melbourne. We recently migrated from HTTP to HTTPS."></textarea>
+            <div class="hint">Any context, constraints, or goals the agent should know. Overrides general recommendations where applicable.</div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn" id="submitBtn" style="margin-top:8px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
           Run Analysis
         </button>
@@ -409,10 +443,20 @@ let pollTimer = null;
 let lastLogCount = 0;
 let history = [];
 
+function toggleOptional() {
+  const toggle = document.getElementById('optionalToggle');
+  const fields = document.getElementById('optionalFields');
+  toggle.classList.toggle('open');
+  fields.classList.toggle('open');
+}
+
 async function startAnalysis(e) {
   e.preventDefault();
   const url = document.getElementById('url').value.trim();
   const ga4Id = document.getElementById('ga4Id').value.trim();
+  const focusKeywords = document.getElementById('focusKeywords').value.trim();
+  const focusPages = document.getElementById('focusPages').value.trim();
+  const specialInstructions = document.getElementById('specialInstructions').value.trim();
   if (!url) return;
   document.getElementById('submitBtn').disabled = true;
   show('analysisProgress'); hide('analysisReport');
@@ -422,7 +466,13 @@ async function startAnalysis(e) {
   lastLogCount = 0;
   const res = await fetch('/api/analyse', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url, ga4_property_id: ga4Id || null }),
+    body: JSON.stringify({
+      url,
+      ga4_property_id: ga4Id || null,
+      focus_keywords: focusKeywords || null,
+      focus_pages: focusPages || null,
+      special_instructions: specialInstructions || null,
+    }),
   });
   const data = await res.json();
   if (data.error) { alert(data.error); document.getElementById('submitBtn').disabled = false; return; }
@@ -718,6 +768,9 @@ function newAnalysis() {
   hide('analysisProgress'); hide('analysisReport');
   document.getElementById('url').value = '';
   document.getElementById('ga4Id').value = '';
+  document.getElementById('focusKeywords').value = '';
+  document.getElementById('focusPages').value = '';
+  document.getElementById('specialInstructions').value = '';
   lastLogCount = 0; currentJobId = null;
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }

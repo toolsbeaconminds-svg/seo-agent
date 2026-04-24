@@ -20,9 +20,15 @@ from config import override_ga4_property
 STATE_FILE = "output/.last_analysis_state.json"
 
 
-async def run_analysis(url: str, ga4_property_id: str | None = None, log_callback=None) -> str:
+async def run_analysis(
+    url: str,
+    ga4_property_id: str | None = None,
+    log_callback=None,
+    focus_keywords: list[str] | None = None,
+    focus_pages: list[str] | None = None,
+    special_instructions: str | None = None,
+) -> str:
     """Run the full analysis pipeline and return the report filepath."""
-    # Override GA4 property ID if provided
     override_ga4_property(ga4_property_id)
 
     def log(msg):
@@ -30,7 +36,14 @@ async def run_analysis(url: str, ga4_property_id: str | None = None, log_callbac
         if log_callback:
             log_callback(msg)
 
-    state = {"url": url, "errors": [], "anomalies": []}
+    state = {
+        "url": url,
+        "errors": [],
+        "anomalies": [],
+        "focus_keywords": focus_keywords or [],
+        "focus_pages": focus_pages or [],
+        "special_instructions": special_instructions or "",
+    }
 
     print(f"\n{'='*60}")
     print(f"  SEO AGENT — Analysing {url}")

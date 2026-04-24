@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+
+# Virtual environments
+venv/
+env/
+.venv/
+ENV/
+
+# Environment files (contain secrets)
+.env
+.env.local
+.env.production
+seo_agent/.env
+
+# Google credentials (sensitive)
+seo_agent/credentials/
+credentials/
+
+# Generated output (ephemeral runtime files)
+seo_agent/output/
+output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+
+# Playwright browser cache
+.playwright/
+
+# Claude Code IDE settings (local only)
+.claude/settings.local.json

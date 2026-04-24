@@ -1,0 +1,14 @@
+# Normalize line endings: store LF in repo, checkout as native on each OS
+* text=auto
+
+# Force LF for files that run in Linux containers (Docker, CI)
+*.py text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.txt text eol=lf
+*.md text eol=lf
+*.html text eol=lf
+*.json text eol=lf

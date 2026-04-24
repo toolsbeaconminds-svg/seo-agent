@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEO Agent</title>
+<style>
+  :root { --bg: #0a0a0f; --card: #12121a; --border: #1e1e2e; --accent: #6366f1; --accent-hover: #818cf8; --text: #e2e8f0; --muted: #64748b; --green: #22c55e; --red: #ef4444; --orange: #f97316; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .header { padding: 24px 32px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .header svg { width: 28px; height: 28px; color: var(--accent); }
+  .header h1 { font-size: 20px; font-weight: 600; }
+  .header span { color: var(--muted); font-size: 14px; margin-left: 8px; }
+
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 32px; }
+  .tab { padding: 14px 24px; font-size: 14px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin-bottom: 24px; }
+  .card h2 { font-size: 18px; margin-bottom: 24px; font-weight: 500; }
+
+  .field { margin-bottom: 20px; }
+  .field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+  .field input { width: 100%; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 15px; outline: none; transition: border-color 0.2s; }
+  .field input:focus { border-color: var(--accent); }
+  .field input::placeholder { color: #334155; }
+  .field .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .row { display: flex; gap: 16px; }
+  .row .field { flex: 1; }
+
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 28px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; transition: background 0.2s; }
+  .btn:hover { background: var(--accent-hover); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-green { background: var(--green); }
+  .btn-green:hover { background: #16a34a; }
+  .btn-sm { padding: 8px 16px; font-size: 13px; }
+
+  .progress-section { margin-top: 24px; display: none; }
+  .progress-section.active { display: block; }
+
+  .status-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); animation: pulse 1.5s infinite; }
+  .status-dot.done { background: var(--green); animation: none; }
+  .status-dot.error { background: var(--red); animation: none; }
+  .status-text { font-size: 14px; color: var(--muted); }
+  .elapsed { margin-left: auto; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .log-box { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 16px; max-height: 300px; overflow-y: auto; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 13px; line-height: 1.7; color: var(--muted); }
+  .log-box .log-line { white-space: pre-wrap; word-break: break-all; }
+  .log-box .log-line.error { color: var(--red); }
+  .log-box .log-line.done { color: var(--green); }
+  .log-box .log-line.warn { color: var(--orange); }
+
+  .report-section { margin-top: 24px; display: none; }
+  .report-section.active { display: block; }
+
+  .report-actions { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+  .btn-outline { padding: 10px 20px; background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s; text-decoration: none; }
+  .btn-outline:hover { background: var(--accent); color: #fff; }
+
+  .report-content { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 24px 28px; max-height: 600px; overflow-y: auto; line-height: 1.8; font-size: 14px; }
+  .report-content h1, .chat-msg-content h1 { font-size: 22px; color: var(--accent); margin-bottom: 8px; border: none; }
+  .report-content h2, .chat-msg-content h2 { font-size: 17px; margin-top: 24px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
+  .report-content h3, .chat-msg-content h3 { font-size: 15px; margin-top: 16px; margin-bottom: 4px; }
+  .report-content p, .chat-msg-content p { margin-bottom: 8px; }
+  .report-content ul, .report-content ol, .chat-msg-content ul, .chat-msg-content ol { margin-left: 20px; margin-bottom: 8px; }
+  .report-content table, .chat-msg-content table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  .report-content th, .report-content td, .chat-msg-content th, .chat-msg-content td { padding: 8px 12px; text-align: left; border: 1px solid var(--border); }
+  .report-content th, .chat-msg-content th { background: var(--card); font-weight: 500; }
+  .report-content strong, .chat-msg-content strong { color: #f1f5f9; }
+  .report-content em, .chat-msg-content em { color: var(--accent); font-style: normal; }
+  .report-content hr, .chat-msg-content hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .report-content pre, .chat-msg-content pre { background: #0f0f18; padding: 14px; border-radius: 8px; overflow-x: auto; font-size: 12px; border: 1px solid var(--border); margin: 8px 0; }
+  .report-content code, .chat-msg-content code { font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 13px; }
+  .chat-msg-content code:not(pre code) { background: rgba(99,102,241,0.15); padding: 2px 6px; border-radius: 4px; }
+
+  /* Mode selector */
+  .mode-cards { display: flex; gap: 16px; margin-bottom: 24px; }
+  .mode-card { flex: 1; padding: 20px; background: var(--bg); border: 2px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; }
+  .mode-card:hover { border-color: var(--muted); }
+  .mode-card.selected { border-color: var(--accent); background: rgba(99,102,241,0.05); }
+  .mode-card h3 { font-size: 15px; margin-bottom: 6px; }
+  .mode-card p { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  .wp-fields { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .wp-fields.active { display: block; }
+
+  .state-banner { padding: 16px 20px; border-radius: 8px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; }
+  .state-banner.ready { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+  .state-banner.empty { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); }
+  .state-banner .icon { font-size: 20px; }
+  .state-banner .info { flex: 1; }
+  .state-banner .info .title { font-size: 14px; font-weight: 500; }
+  .state-banner .info .sub { font-size: 12px; color: var(--muted); }
+
+  /* ── Chat UI ──────────────────────────────────────────────────── */
+  .chat-section { display: none; margin-top: 24px; }
+  .chat-section.active { display: block; }
+
+  .chat-container { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; height: 70vh; min-height: 500px; }
+
+  .chat-header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .chat-header-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .chat-header-title { font-size: 14px; font-weight: 500; }
+  .chat-header-sub { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+  .chat-messages { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+
+  .chat-msg { display: flex; gap: 12px; max-width: 92%; }
+  .chat-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+  .chat-msg.assistant { align-self: flex-start; }
+
+  .chat-avatar { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .chat-msg.assistant .chat-avatar { background: var(--accent); color: #fff; }
+  .chat-msg.user .chat-avatar { background: #1e293b; color: var(--muted); }
+
+  .chat-bubble { border-radius: 12px; padding: 14px 18px; line-height: 1.7; font-size: 14px; }
+  .chat-msg.assistant .chat-bubble { background: var(--bg); border: 1px solid var(--border); }
+  .chat-msg.user .chat-bubble { background: var(--accent); color: #fff; }
+  .chat-msg.user .chat-bubble strong { color: #fff; }
+
+  .chat-msg-content { }
+  .chat-msg-content > *:last-child { margin-bottom: 0; }
+
+  .chat-typing { align-self: flex-start; display: none; gap: 12px; max-width: 80%; }
+  .chat-typing.active { display: flex; }
+  .chat-typing .chat-bubble { display: flex; gap: 4px; padding: 16px 20px; }
+  .typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: typingBounce 1.2s infinite; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+
+  .chat-input-area { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 12px; }
+  .chat-input { flex: 1; padding: 12px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-size: 14px; outline: none; font-family: inherit; resize: none; }
+  .chat-input:focus { border-color: var(--accent); }
+  .chat-input::placeholder { color: #334155; }
+  .chat-send { padding: 12px 20px; background: var(--accent); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; transition: background 0.2s; }
+  .chat-send:hover { background: var(--accent-hover); }
+  .chat-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .quick-actions { display: flex; gap: 8px; padding: 0 24px 12px; }
+  .quick-btn { padding: 6px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-size: 12px; cursor: pointer; transition: all 0.2s; }
+  .quick-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* History */
+  .past-reports { margin-top: 40px; }
+  .past-reports h3 { font-size: 14px; color: var(--muted); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .report-list { display: flex; flex-direction: column; gap: 8px; }
+  .report-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; transition: border-color 0.2s; }
+  .report-item:hover { border-color: var(--accent); }
+  .report-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .report-item .info { flex: 1; }
+  .report-item .info .name { font-size: 14px; }
+  .report-item .info .time { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+  <h1>SEO Agent</h1>
+  <span>AI-Powered Analysis & Implementation</span>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('analysis')">Analysis</div>
+  <div class="tab" onclick="switchTab('implement')">Implement</div>
+</div>
+
+<div class="container">
+
+  <!-- ═══════════ ANALYSIS TAB ═══════════ -->
+  <div class="tab-content active" id="tab-analysis">
+    <div class="card">
+      <h2>New Analysis</h2>
+      <form id="analysisForm" onsubmit="startAnalysis(event)">
+        <div class="field">
+          <label>Website URL</label>
+          <input type="text" id="url" placeholder="https://example.com" required autocomplete="url">
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>GA4 Property ID</label>
+            <input type="text" id="ga4Id" placeholder="e.g. 504669409">
+            <div class="hint">Found in GA4 &rarr; Admin &rarr; Property Settings. Leave blank to skip GA4.</div>
+          </div>
+          <div class="field">
+            <label>GSC Property</label>
+            <input type="text" disabled placeholder="Auto-detected from URL" style="opacity:0.4;">
+            <div class="hint">Uses the same URL. Service account must have access.</div>
+          </div>
+        </div>
+        <button type="submit" class="btn" id="submitBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          Run Analysis
+        </button>
+      </form>
+    </div>
+
+    <div class="progress-section" id="analysisProgress">
+      <div class="card">
+        <div class="status-bar">
+          <div class="status-dot" id="analysisDot"></div>
+          <span class="status-text" id="analysisStatusText">Starting analysis...</span>
+          <span class="elapsed" id="analysisElapsed">0s</span>
+        </div>
+        <div class="log-box" id="analysisLog"></div>
+      </div>
+    </div>
+
+    <div class="report-section" id="analysisReport">
+      <div class="card">
+        <h2>Analysis Complete</h2>
+        <div class="report-actions">
+          <a class="btn-outline" id="downloadBtn" href="#">Download .md</a>
+          <button class="btn-outline" onclick="copyReport('analysisReportContent')">Copy to clipboard</button>
+          <button class="btn-outline" onclick="switchTab('implement')">Implement fixes</button>
+          <button class="btn-outline" onclick="newAnalysis()">New analysis</button>
+        </div>
+        <div class="report-content" id="analysisReportContent"></div>
+      </div>
+    </div>
+
+    <div class="past-reports" id="historySection" style="display:none;">
+      <h3>Session History</h3>
+      <div class="report-list" id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ IMPLEMENT TAB ═══════════ -->
+  <div class="tab-content" id="tab-implement">
+
+    <div class="state-banner empty" id="stateBanner">
+      <div class="icon">...</div>
+      <div class="info">
+        <div class="title">Checking for analysis data...</div>
+        <div class="sub"></div>
+      </div>
+    </div>
+
+    <!-- Mode selection (shown before implementation starts) -->
+    <div id="implementForm">
+      <div class="card">
+        <h2>Implementation Mode</h2>
+        <div class="mode-cards">
+          <div class="mode-card selected" id="modeGuide" onclick="selectMode('guide')">
+            <h3>Guided Mode</h3>
+            <p>AI walks you through each fix step by step in a chat. Generates all files (schema, meta tags, redirects) and guides you on where to paste them.</p>
+          </div>
+          <div class="mode-card" id="modeAuto" onclick="selectMode('auto')">
+            <h3>Auto Mode</h3>
+            <p>Provide WordPress credentials and let the agent implement fixes directly via the WP REST API.</p>
+          </div>
+        </div>
+
+        <div class="wp-fields" id="wpFields">
+          <div class="field">
+            <label>WordPress URL</label>
+            <input type="text" id="wpUrl" placeholder="https://example.com">
+          </div>
+          <div class="row">
+            <div class="field">
+              <label>Username</label>
+              <input type="text" id="wpUser" placeholder="admin">
+            </div>
+            <div class="field">
+              <label>Application Password</label>
+              <input type="password" id="wpPass" placeholder="xxxx xxxx xxxx xxxx">
+              <div class="hint">WP Admin &rarr; Users &rarr; Your Profile &rarr; Application Passwords</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-green" id="implementBtn" onclick="startImplementation()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+          Start Implementation
+        </button>
+        <button class="btn" id="resumeChatBtn" onclick="resumeGuideChat()" style="display:none; margin-left:8px; border:1px solid var(--accent);">
+          Resume chat
+        </button>
+      </div>
+    </div>
+
+    <!-- Progress (shown during file generation) -->
+    <div class="progress-section" id="implementProgress">
+      <div class="card">
+        <div class="status-bar">
+          <div class="status-dot" id="implementDot"></div>
+          <span class="status-text" id="implementStatusText">Starting implementation...</span>
+          <span class="elapsed" id="implementElapsed">0s</span>
+        </div>
+        <div class="log-box" id="implementLog"></div>
+      </div>
+    </div>
+
+    <!-- Auto mode report -->
+    <div class="report-section" id="implementReport">
+      <div class="card">
+        <h2 id="implementReportTitle">Implementation Complete</h2>
+        <div class="report-actions">
+          <a class="btn-outline" id="implDownloadBtn" href="#">Download report</a>
+          <a class="btn-outline" id="implKitBtn" href="/api/download-kit" style="display:none;">Download implementation kit (.zip)</a>
+          <button class="btn-outline" onclick="copyReport('implementReportContent')">Copy to clipboard</button>
+        </div>
+        <div class="report-content" id="implementReportContent"></div>
+      </div>
+    </div>
+
+    <!-- ═══ Guide Chat ═══ -->
+    <div class="chat-section" id="chatSection">
+      <div class="chat-container">
+        <div class="chat-header">
+          <div class="chat-header-dot"></div>
+          <div class="chat-header-title">SEO Implementation Guide</div>
+          <div class="chat-header-sub" id="chatTaskCounter"></div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <!-- Messages inserted here -->
+          <div class="chat-typing" id="chatTyping">
+            <div class="chat-avatar">AI</div>
+            <div class="chat-bubble">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-actions">
+          <button class="quick-btn" onclick="quickSend('done')">Done</button>
+          <button class="quick-btn" onclick="quickSend('next')">Next task</button>
+          <button class="quick-btn" onclick="quickSend('skip')">Skip</button>
+          <button class="quick-btn" onclick="quickSend('show me the file')">Show file</button>
+          <button class="quick-btn" onclick="quickSend('explain more simply')">Simplify</button>
+        </div>
+
+        <div class="chat-input-area">
+          <input class="chat-input" id="chatInput" placeholder="Type a message or click a quick action..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}">
+          <button class="chat-send" id="chatSendBtn" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+
+      <div style="margin-top: 12px; display: flex; gap: 12px;">
+        <a class="btn-outline" id="chatKitBtn" href="/api/download-kit">Download all files (.zip)</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Markdown → HTML ─────────────────────────────────────────────
+function md(text) {
+  if (!text) return '';
+  let html = text
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/_(.+?)_/g, '<em>$1</em>')
+    .replace(/^---$/gm, '<hr>')
+    .replace(/```(\w*)\n([\s\S]*?)```/gm, '<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/^\|(.+)\|$/gm, (match) => {
+      const cells = match.split('|').filter(c => c.trim() !== '');
+      if (cells.every(c => /^[\s-:]+$/.test(c))) return '<!--sep-->';
+      return '<tr>' + cells.map(c => '<td>' + c.trim() + '</td>').join('') + '</tr>';
+    });
+  html = html.replace(/((<tr>.*<\/tr>\n?)+)/g, '<table>$1</table>');
+  html = html.replace(/<!--sep-->\n?/g, '');
+  html = html.replace(/<table>\s*<tr>(.*?)<\/tr>/g, (m, inner) =>
+    '<table><tr>' + inner.replace(/<td>/g, '<th>').replace(/<\/td>/g, '</th>') + '</tr>');
+  html = html.replace(/^- \[[ x]\] (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+  html = html.replace(/((<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+  html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  html = html.split('\n').map(line => {
+    const t = line.trim();
+    if (!t) return '';
+    if (/^</.test(t)) return line;
+    return '<p>' + line + '</p>';
+  }).join('\n');
+  return html;
+}
+
+// ── Tabs ────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.tab:nth-child(${tab === 'analysis' ? 1 : 2})`).classList.add('active');
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  if (tab === 'implement') checkState();
+}
+
+// ── Analysis ────────────────────────────────────────────────────
+let currentJobId = null;
+let pollTimer = null;
+let lastLogCount = 0;
+let history = [];
+
+async function startAnalysis(e) {
+  e.preventDefault();
+  const url = document.getElementById('url').value.trim();
+  const ga4Id = document.getElementById('ga4Id').value.trim();
+  if (!url) return;
+  document.getElementById('submitBtn').disabled = true;
+  show('analysisProgress'); hide('analysisReport');
+  document.getElementById('analysisLog').innerHTML = '';
+  document.getElementById('analysisDot').className = 'status-dot';
+  document.getElementById('analysisStatusText').textContent = 'Starting analysis...';
+  lastLogCount = 0;
+  const res = await fetch('/api/analyse', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, ga4_property_id: ga4Id || null }),
+  });
+  const data = await res.json();
+  if (data.error) { alert(data.error); document.getElementById('submitBtn').disabled = false; return; }
+  currentJobId = data.job_id;
+  pollTimer = setInterval(() => pollJob(currentJobId, 'analysis'), 2000);
+}
+
+async function pollJob(jobId, prefix) {
+  const res = await fetch(`/api/status/${jobId}`);
+  const data = await res.json();
+  document.getElementById(`${prefix}Elapsed`).textContent = data.elapsed + 's';
+  const logBox = document.getElementById(`${prefix}Log`);
+  const newLogs = data.logs.slice(lastLogCount);
+  for (const line of newLogs) {
+    const div = document.createElement('div');
+    div.className = 'log-line';
+    if (line.includes('ERROR') || line.includes('FATAL') || line.includes('Failed')) div.className += ' error';
+    else if (line.includes('Done') || line.includes('DONE') || line.includes('done')) div.className += ' done';
+    else if (line.includes('WARNING') || line.includes('SKIPPED')) div.className += ' warn';
+    div.textContent = line;
+    logBox.appendChild(div);
+  }
+  lastLogCount = data.logs.length;
+  logBox.scrollTop = logBox.scrollHeight;
+
+  if (data.status === 'done') {
+    clearInterval(pollTimer);
+    document.getElementById(`${prefix}Dot`).className = 'status-dot done';
+    if (prefix === 'analysis') {
+      document.getElementById('analysisStatusText').textContent = 'Analysis complete!';
+      document.getElementById('submitBtn').disabled = false;
+      show('analysisReport');
+      document.getElementById('analysisReportContent').innerHTML = md(data.report_content);
+      document.getElementById('downloadBtn').href = `/api/download/${jobId}`;
+      addHistory(document.getElementById('url').value, jobId, data.elapsed);
+    } else {
+      document.getElementById('implementStatusText').textContent = 'Files generated!';
+      document.getElementById('implementBtn').disabled = false;
+      if (implMode === 'guide') {
+        // After guide generation completes, start the chat
+        startGuideChat();
+      } else {
+        show('implementReport');
+        document.getElementById('implementReportContent').innerHTML = md(data.report_content);
+        document.getElementById('implDownloadBtn').href = `/api/download/${jobId}`;
+      }
+    }
+  } else if (data.status === 'error') {
+    clearInterval(pollTimer);
+    document.getElementById(`${prefix}Dot`).className = 'status-dot error';
+    document.getElementById(`${prefix}StatusText`).textContent = 'Failed: ' + data.error;
+    if (prefix === 'analysis') document.getElementById('submitBtn').disabled = false;
+    else document.getElementById('implementBtn').disabled = false;
+  }
+}
+
+// ── Implementation ──────────────────────────────────────────────
+let implMode = 'guide';
+
+function selectMode(mode) {
+  implMode = mode;
+  document.getElementById('modeGuide').classList.toggle('selected', mode === 'guide');
+  document.getElementById('modeAuto').classList.toggle('selected', mode === 'auto');
+  document.getElementById('wpFields').classList.toggle('active', mode === 'auto');
+}
+
+async function checkState() {
+  const res = await fetch('/api/state');
+  const data = await res.json();
+  const banner = document.getElementById('stateBanner');
+  if (data.available) {
+    banner.className = 'state-banner ready';
+    banner.innerHTML = `<div class="icon">&#9989;</div><div class="info"><div class="title">${data.business_name} — ${data.findings} findings ready</div><div class="sub">${data.url}</div></div>`;
+    document.getElementById('implementBtn').disabled = false;
+    document.getElementById('wpUrl').placeholder = data.url;
+  } else {
+    banner.className = 'state-banner empty';
+    banner.innerHTML = `<div class="icon">&#10060;</div><div class="info"><div class="title">No analysis data found</div><div class="sub">Run an analysis first from the Analysis tab.</div></div>`;
+    document.getElementById('implementBtn').disabled = true;
+  }
+}
+
+async function startImplementation() {
+  document.getElementById('implementBtn').disabled = true;
+  document.getElementById('implementForm').style.display = 'none';
+  show('implementProgress'); hide('implementReport'); hide('chatSection');
+  document.getElementById('implementLog').innerHTML = '';
+  document.getElementById('implementDot').className = 'status-dot';
+  document.getElementById('implementStatusText').textContent = 'Generating files & task plan...';
+  lastLogCount = 0;
+
+  const body = { mode: implMode };
+  if (implMode === 'auto') {
+    body.wp_url = document.getElementById('wpUrl').value.trim();
+    body.wp_username = document.getElementById('wpUser').value.trim();
+    body.wp_password = document.getElementById('wpPass').value.trim();
+  }
+
+  const res = await fetch('/api/implement', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (data.error) {
+    alert(data.error);
+    document.getElementById('implementBtn').disabled = false;
+    document.getElementById('implementForm').style.display = '';
+    return;
+  }
+  currentJobId = data.job_id;
+  pollTimer = setInterval(() => pollJob(data.job_id, 'implement'), 2000);
+}
+
+// ── Guide Chat ──────────────────────────────────────────────────
+let chatSessionId = null;
+let chatBusy = false;
+
+async function checkForSavedChat() {
+  try {
+    const res = await fetch('/api/chat/resume');
+    const data = await res.json();
+    if (data.has_session) {
+      const resumeBtn = document.getElementById('resumeChatBtn');
+      if (resumeBtn) {
+        resumeBtn.style.display = 'inline-flex';
+        resumeBtn.textContent = `Resume chat (${data.message_count} messages)`;
+      }
+    }
+  } catch(e) {}
+}
+
+async function resumeGuideChat() {
+  show('chatSection');
+  document.getElementById('chatMessages').innerHTML = `
+    <div class="chat-typing" id="chatTyping">
+      <div class="chat-avatar">AI</div>
+      <div class="chat-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+    </div>`;
+
+  const res = await fetch('/api/chat/resume');
+  const data = await res.json();
+
+  if (!data.has_session) {
+    startGuideChat();
+    return;
+  }
+
+  chatSessionId = data.session_id;
+  document.getElementById('chatTaskCounter').textContent = `${data.task_count} tasks`;
+
+  // Replay all messages
+  for (const msg of data.messages) {
+    appendMsg(msg.role, msg.content);
+  }
+  document.getElementById('chatInput').focus();
+}
+
+async function startGuideChat() {
+  show('chatSection');
+  document.getElementById('chatMessages').innerHTML = `
+    <div class="chat-typing active" id="chatTyping">
+      <div class="chat-avatar">AI</div>
+      <div class="chat-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>
+    </div>`;
+
+  const res = await fetch('/api/chat/start', { method: 'POST' });
+  const data = await res.json();
+
+  if (data.error) {
+    document.getElementById('chatTyping').classList.remove('active');
+    appendMsg('assistant', 'Error starting guide: ' + data.error);
+    return;
+  }
+
+  chatSessionId = data.session_id;
+  document.getElementById('chatTaskCounter').textContent = `${data.task_count} tasks`;
+  document.getElementById('chatTyping').classList.remove('active');
+  appendMsg('assistant', data.message);
+  document.getElementById('chatInput').focus();
+}
+
+function appendMsg(role, text) {
+  const container = document.getElementById('chatMessages');
+  const typing = document.getElementById('chatTyping');
+
+  const msg = document.createElement('div');
+  msg.className = `chat-msg ${role}`;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'chat-avatar';
+  avatar.textContent = role === 'assistant' ? 'AI' : 'You';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble';
+
+  if (role === 'assistant') {
+    const content = document.createElement('div');
+    content.className = 'chat-msg-content';
+    content.innerHTML = md(text);
+    bubble.appendChild(content);
+  } else {
+    bubble.textContent = text;
+  }
+
+  msg.appendChild(avatar);
+  msg.appendChild(bubble);
+  container.insertBefore(msg, typing);
+  container.scrollTop = container.scrollHeight;
+  return bubble;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text || chatBusy || !chatSessionId) return;
+
+  input.value = '';
+  chatBusy = true;
+  document.getElementById('chatSendBtn').disabled = true;
+  appendMsg('user', text);
+
+  // Show typing
+  document.getElementById('chatTyping').classList.add('active');
+  const container = document.getElementById('chatMessages');
+  container.scrollTop = container.scrollHeight;
+
+  // Stream response
+  try {
+    const res = await fetch('/api/chat/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: chatSessionId, message: text }),
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let bubble = null;
+
+    document.getElementById('chatTyping').classList.remove('active');
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n').filter(l => l.startsWith('data: '));
+
+      for (const line of lines) {
+        try {
+          const data = JSON.parse(line.slice(6));
+          if (data.done) break;
+          if (data.text) {
+            fullText += data.text;
+            if (!bubble) {
+              bubble = appendMsg('assistant', fullText);
+            } else {
+              const content = bubble.querySelector('.chat-msg-content') || bubble;
+              content.innerHTML = md(fullText);
+            }
+            container.scrollTop = container.scrollHeight;
+          }
+        } catch(e) {}
+      }
+    }
+  } catch(e) {
+    appendMsg('assistant', 'Connection error. Please try again.');
+  } finally {
+    document.getElementById('chatTyping').classList.remove('active');
+    chatBusy = false;
+    document.getElementById('chatSendBtn').disabled = false;
+    input.focus();
+  }
+}
+
+function quickSend(text) {
+  document.getElementById('chatInput').value = text;
+  sendMessage();
+}
+
+// ── Helpers ─────────────────────────────────────────────────────
+function show(id) { document.getElementById(id).classList.add('active'); }
+function hide(id) { document.getElementById(id).classList.remove('active'); }
+
+function copyReport(elementId) {
+  const text = document.getElementById(elementId).innerText;
+  navigator.clipboard.writeText(text);
+  event.target.textContent = 'Copied!';
+  setTimeout(() => event.target.textContent = 'Copy to clipboard', 1500);
+}
+
+function newAnalysis() {
+  hide('analysisProgress'); hide('analysisReport');
+  document.getElementById('url').value = '';
+  document.getElementById('ga4Id').value = '';
+  lastLogCount = 0; currentJobId = null;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function addHistory(url, jobId, elapsed) {
+  history.unshift({ url, jobId, elapsed, time: new Date().toLocaleTimeString() });
+  renderHistory();
+}
+
+function renderHistory() {
+  if (!history.length) return;
+  document.getElementById('historySection').style.display = 'block';
+  document.getElementById('historyList').innerHTML = history.map(h => `
+    <div class="report-item" onclick="loadPastReport('${h.jobId}')">
+      <div class="dot"></div>
+      <div class="info"><div class="name">${h.url}</div><div class="time">${h.time} &middot; ${h.elapsed}s</div></div>
+    </div>`).join('');
+}
+
+async function loadPastReport(jobId) {
+  const res = await fetch(`/api/status/${jobId}`);
+  const data = await res.json();
+  if (data.report_content) {
+    currentJobId = jobId;
+    show('analysisReport');
+    document.getElementById('analysisReportContent').innerHTML = md(data.report_content);
+    document.getElementById('downloadBtn').href = `/api/download/${jobId}`;
+    document.getElementById('analysisReport').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+checkState();
+checkForSavedChat();
+</script>
+</body>
+</html>

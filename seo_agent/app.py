@@ -579,11 +579,13 @@ def chat_stream():
                     time.sleep(wait)
                 else:
                     print(f"  [chat/stream] ERROR: {e}")
-                    yield f"data: {json.dumps({'text': f'\\n\\n⚠️ API overloaded. Please try again in a moment.'})}\n\n"
+                    msg = "\n\n⚠️ API overloaded. Please try again in a moment."
+                    yield f"data: {json.dumps({'text': msg})}\n\n"
                     break
             except Exception as e:
                 print(f"  [chat/stream] ERROR: {e}")
-                yield f"data: {json.dumps({'text': f'\\n\\n⚠️ Error: {e}'})}\n\n"
+                msg = f"\n\n⚠️ Error: {e}"
+                yield f"data: {json.dumps({'text': msg})}\n\n"
                 break
 
         yield f"data: {json.dumps({'done': True})}\n\n"

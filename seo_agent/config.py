@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     GOOGLE_SERVICE_ACCOUNT_KEY_PATH: Optional[str] = None
     GA4_PROPERTY_ID: Optional[str] = None
     AHREFS_API_KEY: Optional[str] = None
+    PAGESPEED_API_KEY: Optional[str] = None
 
     # WordPress (Application Password auth)
     WP_URL: Optional[str] = None

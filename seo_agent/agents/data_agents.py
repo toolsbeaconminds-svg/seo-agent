@@ -4,6 +4,7 @@ from tools.gsc_client import GSCClient
 from tools.ga4_client import GA4Client
 from tools.ahrefs_client import AhrefsClient
 from tools.pagespeed_client import PageSpeedClient
+from config import settings
 
 SPAM_TERMS = {"casino", "gambling", "betting", "türkçe", "vaycasino", "poker", "slot"}
 
@@ -97,7 +98,7 @@ class PageSpeedAgent:
         url = state["url"]
         print(f"  [pagespeed] Running PageSpeed Insights for {url}...")
         try:
-            client = PageSpeedClient()
+            client = PageSpeedClient(api_key=settings.PAGESPEED_API_KEY)
             data = await client.get_all_data(url)
             state["pagespeed_data"] = data
 

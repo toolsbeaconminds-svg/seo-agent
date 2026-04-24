@@ -1,0 +1,2 @@
+-r seo_agent/requirements.txt
+gunicorn>=22.0.0

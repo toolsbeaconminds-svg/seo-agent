@@ -1,0 +1,22 @@
+# Secrets — never bake into image
+seo_agent/.env
+seo_agent/credentials/
+
+# Generated runtime files
+seo_agent/output/
+
+# Python cache (recompiled in container anyway)
+**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+
+# IDE / OS
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.github/

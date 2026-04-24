@@ -144,6 +144,11 @@ def _run_implement_job(job_id: str, mode: str, wp_url: str, wp_user: str, wp_pas
 
 # ── Routes ───────────────────────────────────────────────────────────
 
+@app.route("/health")
+def health():
+    return "ok", 200
+
+
 @app.route("/")
 def index():
     return render_template("index.html")

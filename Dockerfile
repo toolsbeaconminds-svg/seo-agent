@@ -16,9 +16,9 @@ COPY seo_agent/ .
 # Runtime output directory (ephemeral; use a Railway volume for persistence)
 RUN mkdir -p output/implementation_kit
 
-ENV PORT=8080
 EXPOSE 8080
 
 # Single worker keeps the in-memory jobs dict consistent across requests.
 # 8 threads handle concurrent API calls and SSE streams.
-CMD ["sh", "-c", "gunicorn --workers=1 --threads=8 --timeout=300 --bind 0.0.0.0:$PORT app:app"]
+# --access-logfile - sends access logs to stdout so Railway captures them.
+CMD ["sh", "-c", "exec gunicorn --workers=1 --threads=8 --timeout=300 --access-logfile - --error-logfile - --bind 0.0.0.0:${PORT:-8080} app:app"]

@@ -103,9 +103,16 @@ class AhrefsClient:
     async def get_anchors(self, target: str, limit: int = 30) -> list[dict]:
         data = await self._get("/site-explorer/anchors", {
             "target": target, "date": _recent_date(), "limit": limit,
-            "select": "anchor,backlinks,referring_domains",
+            "select": "anchor,links_to_target,refdomains",
         })
-        return data.get("anchors", [])
+        # Normalise to the field names the rest of the code expects
+        anchors = data.get("anchors", [])
+        for a in anchors:
+            if "links_to_target" in a and "backlinks" not in a:
+                a["backlinks"] = a.pop("links_to_target")
+            if "refdomains" in a and "referring_domains" not in a:
+                a["referring_domains"] = a.pop("refdomains")
+        return anchors
 
     async def get_broken_backlinks(self, target: str, limit: int = 20) -> list[dict]:
         data = await self._get("/site-explorer/broken-backlinks", {
@@ -117,9 +124,13 @@ class AhrefsClient:
     async def get_top_pages(self, target: str, limit: int = 20) -> list[dict]:
         data = await self._get("/site-explorer/top-pages", {
             "target": target, "date": _recent_date(), "limit": limit,
-            "select": "url,sum_traffic,keywords,best_position",
+            "select": "url,sum_traffic,keywords,top_keyword_best_position",
         })
-        return data.get("pages", [])
+        pages = data.get("pages", [])
+        for p in pages:
+            if "top_keyword_best_position" in p and "best_position" not in p:
+                p["best_position"] = p.pop("top_keyword_best_position")
+        return pages
 
     async def get_all_data(self, target: str) -> dict:
         result = {}

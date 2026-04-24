@@ -111,6 +111,8 @@
   .state-banner .info { flex: 1; }
   .state-banner .info .title { font-size: 14px; font-weight: 500; }
   .state-banner .info .sub { font-size: 12px; color: var(--muted); }
+  .btn-clear { padding: 6px 14px; background: transparent; color: var(--red); border: 1px solid rgba(239,68,68,0.4); border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+  .btn-clear:hover { background: rgba(239,68,68,0.1); border-color: var(--red); }
 
   /* ── Chat UI ──────────────────────────────────────────────────── */
   .chat-section { display: none; margin-top: 24px; }
@@ -545,7 +547,13 @@ async function checkState() {
   const banner = document.getElementById('stateBanner');
   if (data.available) {
     banner.className = 'state-banner ready';
-    banner.innerHTML = `<div class="icon">&#9989;</div><div class="info"><div class="title">${data.business_name} — ${data.findings} findings ready</div><div class="sub">${data.url}</div></div>`;
+    banner.innerHTML = `
+      <div class="icon">&#9989;</div>
+      <div class="info">
+        <div class="title">${data.business_name} — ${data.findings} findings ready</div>
+        <div class="sub">${data.url}</div>
+      </div>
+      <button class="btn-clear" onclick="clearState()">&#128465; Clear data</button>`;
     document.getElementById('implementBtn').disabled = false;
     document.getElementById('wpUrl').placeholder = data.url;
   } else {
@@ -553,6 +561,17 @@ async function checkState() {
     banner.innerHTML = `<div class="icon">&#10060;</div><div class="info"><div class="title">No analysis data found</div><div class="sub">Run an analysis first from the Analysis tab.</div></div>`;
     document.getElementById('implementBtn').disabled = true;
   }
+}
+
+async function clearState() {
+  if (!confirm('Clear the saved analysis? This will remove all findings, the task plan, and the chat session. You will need to run a new analysis.')) return;
+  await fetch('/api/clear-state', { method: 'POST' });
+  // Reset the implement tab to its initial state
+  document.getElementById('implementForm').style.display = '';
+  hide('implementProgress'); hide('implementReport'); hide('chatSection');
+  document.getElementById('implementLog').innerHTML = '';
+  document.getElementById('resumeChatBtn').style.display = 'none';
+  checkState();
 }
 
 async function startImplementation() {

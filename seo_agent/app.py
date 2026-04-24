@@ -261,6 +261,17 @@ def check_state():
     return jsonify({"available": False})
 
 
+@app.route("/api/clear-state", methods=["POST"])
+def clear_state():
+    """Delete saved analysis state and chat session so a fresh run can begin."""
+    removed = []
+    for path in [STATE_FILE, CHAT_SESSION_FILE]:
+        if os.path.exists(path):
+            os.remove(path)
+            removed.append(path)
+    return jsonify({"cleared": removed})
+
+
 @app.route("/api/status/<job_id>")
 def job_status(job_id):
     job = jobs.get(job_id)
